@@ -1,0 +1,86 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ItemMode {
+  SELL
+  EXCHANGE
+  DONATE
+  BORROW
+}
+
+enum ItemStatus {
+  AVAILABLE
+  RESERVED
+  COMPLETED
+}
+
+enum ItemCondition {
+  LIKE_NEW
+  GOOD
+  USED
+  NEEDS_REPAIR
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  items         Item[]
+  sentRequests  Request[] @relation("Requester")
+  ownedRequests Request[] @relation("Owner")
+}
+
+model Item {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  category    String
+  location    String?
+  mode        ItemMode
+  status      ItemStatus     @default(AVAILABLE)
+  condition   ItemCondition
+  price       Float?
+  imageUrl    String?
+  returnDate  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  ownerId     String
+  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  requests    Request[]
+}
+
+
+model Request {
+  id          String        @id @default(cuid())
+  message     String?
+  type        ItemMode
+  dueDate     DateTime?
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  itemId      String
+  requesterId String
+  ownerId     String
+  item        Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  requester   User          @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  owner       User          @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+}
+
